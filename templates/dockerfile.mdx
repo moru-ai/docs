@@ -71,20 +71,33 @@ const info = await Template.build(template, { alias: "my-app" })
 
 ## Supported Instructions
 
-| Instruction | Support | Notes |
-|-------------|---------|-------|
-| `FROM` | Full | Base image selection |
-| `RUN` | Full | Execute commands |
-| `COPY` | Full | Copy files |
-| `ADD` | Partial | URLs not supported |
-| `WORKDIR` | Full | Set working directory |
-| `ENV` | Full | Environment variables |
-| `USER` | Full | Set user |
-| `CMD` | Full | Start command |
-| `ENTRYPOINT` | Partial | Converted to CMD |
-| `EXPOSE` | Ignored | Not needed for Moru |
-| `VOLUME` | Ignored | Not applicable |
-| `ARG` | Ignored | Use environment variables |
+| Instruction | Support | Reason |
+|-------------|---------|--------|
+| `FROM` | ✅ Full | Sets the base image for the template |
+| `RUN` | ✅ Full | Commands executed during template build |
+| `COPY` | ✅ Full | Files uploaded and copied into the template |
+| `WORKDIR` | ✅ Full | Sets the working directory for subsequent commands |
+| `ENV` | ✅ Full | Environment variables persisted in the template (both `KEY=value` and `KEY value` formats) |
+| `USER` | ✅ Full | Sets the user context for subsequent commands |
+| `CMD` | ✅ Full | Converted to Moru's start command |
+| `ENTRYPOINT` | ⚠️ Partial | Converted to `CMD` - ENTRYPOINT and CMD are not distinguished |
+| `ADD` | ⚠️ Partial | Local files only - URL sources not supported (use `RUN curl` or `RUN wget` instead) |
+| `ARG` | ❌ Ignored | Build arguments not expanded - use `ENV` instead for runtime variables |
+| `EXPOSE` | ❌ Ignored | Not needed - all ports are accessible in Moru sandboxes by default |
+| `VOLUME` | ❌ Ignored | Not applicable - Moru sandboxes use ephemeral filesystems |
+| `HEALTHCHECK` | ❌ Ignored | Use Moru's `ready_cmd` instead for health checks |
+| `LABEL` | ❌ Ignored | Metadata labels not used in Moru templates |
+| `STOPSIGNAL` | ❌ Ignored | Moru manages sandbox lifecycle directly |
+| `SHELL` | ❌ Ignored | Moru uses the default shell |
+
+### Why Some Instructions Are Ignored
+
+Moru templates are **not Docker containers**. They run in lightweight Firecracker microVMs with a different execution model:
+
+- **No port mapping needed**: Sandboxes expose all ports directly - `EXPOSE` is unnecessary
+- **Ephemeral by design**: Sandbox filesystems reset on restart - `VOLUME` doesn't apply
+- **Build-time vs runtime**: `ARG` is for Docker build-time only; use `ENV` for Moru templates
+- **Native health checks**: Use `set_ready_cmd()` instead of `HEALTHCHECK` for better integration
 
 ## Example: Node.js Application
 
@@ -127,35 +140,79 @@ const info = await Template.build(template, { alias: "my-node-app" })
 ```
 </CodeGroup>
 
-## Example: Multi-stage Build
+## Not Supported: Multi-stage Builds
 
-Multi-stage builds are supported. Only the final stage is used:
+<Warning>
+Multi-stage Dockerfiles are **not supported**. If your Dockerfile contains multiple `FROM` instructions, you'll get an error.
+</Warning>
+
+If you have a multi-stage Dockerfile like this:
 
 ```dockerfile
-# Build stage
+# This will NOT work with Moru
 FROM node:20 AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+RUN npm ci && npm run build
 
-# Production stage
+FROM node:20-slim
+COPY --from=builder /app/dist ./dist
+CMD ["node", "dist/server.js"]
+```
+
+You have two options:
+
+### Option 1: Build locally, use production image
+
+Build your application locally, then create a template from the production stage only:
+
+```dockerfile
+# production.Dockerfile - single stage
 FROM node:20-slim
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY dist ./dist
+COPY node_modules ./node_modules
 CMD ["node", "dist/server.js"]
 ```
 
 <CodeGroup>
 ```python Python
-template = Template().from_dockerfile("./Dockerfile")
+# Build locally first: npm run build
+template = Template().from_dockerfile("./production.Dockerfile")
 info = Template.build(template, alias="my-built-app")
 ```
 
 ```javascript JavaScript
-const template = Template().fromDockerfile("./Dockerfile")
+// Build locally first: npm run build
+const template = Template().fromDockerfile("./production.Dockerfile")
+const info = await Template.build(template, { alias: "my-built-app" })
+```
+</CodeGroup>
+
+### Option 2: Use the Template Builder API
+
+For more complex builds, use the builder API directly:
+
+<CodeGroup>
+```python Python
+template = (
+    Template()
+    .from_image("node:20-slim")
+    .set_workdir("/app")
+    .copy("./dist", "./dist")
+    .copy("./node_modules", "./node_modules")
+    .set_start_cmd("node dist/server.js")
+)
+info = Template.build(template, alias="my-built-app")
+```
+
+```javascript JavaScript
+const template = Template()
+  .fromImage("node:20-slim")
+  .setWorkdir("/app")
+  .copy("./dist", "./dist")
+  .copy("./node_modules", "./node_modules")
+  .setStartCmd("node dist/server.js")
+
 const info = await Template.build(template, { alias: "my-built-app" })
 ```
 </CodeGroup>
@@ -209,12 +266,19 @@ const info = await Template.build(template, { alias: "my-extended-app" })
 ```
 </CodeGroup>
 
-## Limitations
+## Limitations Summary
 
-- **No build arguments**: `ARG` instructions are ignored. Use environment variables instead.
-- **No URL ADD**: `ADD` with URLs is not supported. Use `RUN curl` or `RUN wget`.
-- **No volumes**: Moru sandboxes have ephemeral filesystems.
-- **EXPOSE ignored**: All ports are accessible. No explicit port exposure needed.
+| Limitation | Workaround |
+|------------|------------|
+| Multi-stage builds | Build locally, use single-stage Dockerfile for final image |
+| `ARG` build arguments | Use `ENV` for runtime variables |
+| `ADD` with URLs | Use `RUN curl -O <url>` or `RUN wget <url>` |
+| `COPY --from=<stage>` | Not supported without multi-stage builds |
+| `HEALTHCHECK` | Use `set_ready_cmd()` / `--ready-cmd` instead |
+
+<Info>
+See the [Supported Instructions](#supported-instructions) table for the complete list of what's supported and why.
+</Info>
 
 ## Best Practices
 

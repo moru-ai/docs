@@ -5,34 +5,34 @@ description: "Pre-configured sandbox environments with custom dependencies"
 
 Templates define the starting state of a sandbox: the base image, installed packages, and startup configuration. Use built-in templates or create custom ones.
 
-## Built-in Templates
+## Default Templates
 
 | Template | Description |
 |----------|-------------|
-| `base` | Minimal Ubuntu with essential tools |
-| `python` | Python 3 with common packages (numpy, pandas, etc.) |
-| `node` | Node.js LTS with npm |
-| `bun` | Bun runtime |
+| `base` | Python 3.11, Node.js 20, Yarn, Git, and GitHub CLI |
+| `claude-agent-python` | Claude Agent SDK with Python 3.11, Node.js 20, and Claude Code CLI |
 
 <CodeGroup>
 ```python Python
 from moru import Sandbox
 
-# Use built-in templates
+# Use default templates
 sandbox = Sandbox.create("base")
-sandbox = Sandbox.create("python")
-sandbox = Sandbox.create("node")
+sandbox = Sandbox.create("claude-agent-python")
 ```
 
 ```javascript JavaScript
 import Sandbox from '@moru-ai/core'
 
-// Use built-in templates
+// Use default templates
 const sandbox = await Sandbox.create("base")
-const sandbox = await Sandbox.create("python")
-const sandbox = await Sandbox.create("node")
+const sandbox = await Sandbox.create("claude-agent-python")
 ```
 </CodeGroup>
+
+<Info>
+  See [Default Templates](/templates/default) for detailed specifications of each template.
+</Info>
 
 ## Custom Templates
 
@@ -107,9 +107,6 @@ flowchart LR
   </Card>
   <Card title="Cost Efficiency" icon="coins">
     Install once, use many times - no repeated package downloads.
-  </Card>
-  <Card title="Version Control" icon="code-branch">
-    Track template changes and roll back if needed.
   </Card>
 </CardGroup>
 

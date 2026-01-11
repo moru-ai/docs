@@ -1,14 +1,23 @@
 ---
 title: "Quickstart"
-description: "Create your first Moru sandbox in 5 minutes"
+description: "Create your first Moru sandbox"
 ---
 
-## Prerequisites
+## Step 1: Create an Account
 
-- A Moru account with an API key ([get one from the dashboard](https://moru.io/dashboard))
-- Python 3.8+ or Node.js 18+
+Sign up for a free Moru account at [moru.io/dashboard](https://moru.io/dashboard).
 
-## Step 1: Install the SDK
+## Step 2: Get Your API Key
+
+1. Go to the [API Keys tab](https://moru.io/dashboard?tab=keys) in your dashboard
+2. Click **Create API Key**
+3. Copy your new API key (you won't be able to see it again)
+
+## Step 3: Install the SDK
+
+<Info>
+**Requirements:** Python 3.8+ or Node.js 18+
+</Info>
 
 <CodeGroup>
 ```bash Python
@@ -20,7 +29,7 @@ npm install @moru-ai/core
 ```
 </CodeGroup>
 
-## Step 2: Set Your API Key
+## Step 4: Set Your API Key
 
 <CodeGroup>
 ```bash Environment Variable
@@ -40,7 +49,7 @@ const sandbox = await Sandbox.create({ apiKey: 'your_api_key_here' })
 ```
 </CodeGroup>
 
-## Step 3: Create a Sandbox and Run Commands
+## Step 5: Create a Sandbox and Run Commands
 
 <CodeGroup>
 ```python Python
@@ -162,18 +171,18 @@ await sandbox.kill()
 ```
 </CodeGroup>
 
-## Using a Template
+## Using a Custom Template
 
-Create a sandbox with a specific template for pre-installed dependencies:
+Create a sandbox with a specific template. You can create custom templates with pre-installed dependencies via the [dashboard](https://moru.io/dashboard) or CLI.
 
 <CodeGroup>
 ```python Python
 from moru import Sandbox
 
-# Use the Python template with common packages pre-installed
-sandbox = Sandbox.create("python")
+# Use a custom template (create one in the dashboard first)
+sandbox = Sandbox.create("my-template")
 
-result = sandbox.commands.run("python3 -c 'import numpy; print(numpy.__version__)'")
+result = sandbox.commands.run("echo 'Running in custom template'")
 print(result.stdout)
 
 sandbox.kill()
@@ -182,10 +191,10 @@ sandbox.kill()
 ```javascript JavaScript
 import Sandbox from '@moru-ai/core'
 
-// Use the Python template with common packages pre-installed
-const sandbox = await Sandbox.create("python")
+// Use a custom template (create one in the dashboard first)
+const sandbox = await Sandbox.create("my-template")
 
-const result = await sandbox.commands.run("python3 -c 'import numpy; print(numpy.__version__)'")
+const result = await sandbox.commands.run("echo 'Running in custom template'")
 console.log(result.stdout)
 
 await sandbox.kill()

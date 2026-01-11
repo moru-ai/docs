@@ -1,0 +1,136 @@
+---
+title: "Default Templates"
+description: "Pre-built templates available to all users"
+---
+
+Default templates are maintained by Moru and available to all users. They provide ready-to-use environments with common tools and dependencies pre-installed.
+
+## Available Templates
+
+<CardGroup cols={2}>
+  <Card title="base" icon="cube">
+    **General purpose sandbox**
+
+    Python 3.11, Node.js 20, Yarn, Git, and GitHub CLI
+  </Card>
+  <Card title="claude-agent-python" icon="robot">
+    **Claude Agent SDK**
+
+    Python 3.11, Node.js 20, Claude Code CLI, and claude-agent-sdk
+  </Card>
+</CardGroup>
+
+## base
+
+The default template for general-purpose sandboxes. Includes common development tools.
+
+**Installed:**
+- Python 3.11.6 with pip
+- Node.js 20.9.0 with npm
+- Yarn 1.22.19
+- Git 2.39.5
+- GitHub CLI (gh) 2.23.0
+- Common build tools (build-essential, curl)
+
+<CodeGroup>
+```python Python
+from moru import Sandbox
+
+sandbox = Sandbox.create("base")
+
+# Python is ready
+result = sandbox.commands.run("python --version")
+print(result.stdout)  # Python 3.11.6
+
+# Node.js is ready
+result = sandbox.commands.run("node --version")
+print(result.stdout)  # v20.9.0
+```
+
+```javascript JavaScript
+import Sandbox from '@moru-ai/core'
+
+const sandbox = await Sandbox.create("base")
+
+// Python is ready
+const pythonResult = await sandbox.commands.run("python --version")
+console.log(pythonResult.stdout)  // Python 3.11.6
+
+// Node.js is ready
+const nodeResult = await sandbox.commands.run("node --version")
+console.log(nodeResult.stdout)  // v20.9.0
+```
+</CodeGroup>
+
+## claude-agent-python
+
+Optimized for building AI agents with the [Claude Agent SDK](/guides/claude-agent-sdk/overview). Includes Claude Code CLI for agentic coding tasks.
+
+**Installed:**
+- Python 3.11.6 with pip
+- Node.js 20.9.0 with npm
+- Claude Code CLI 2.1.4
+- claude-agent-sdk (Python package)
+- Git 2.39.5
+- GitHub CLI (gh) 2.23.0
+- Common build tools
+
+**Resources:**
+- Memory: 1024 MB (1 GiB)
+- CPU: 1 vCPU
+
+<CodeGroup>
+```python Python
+from moru import Sandbox
+
+sandbox = Sandbox.create("claude-agent-python")
+
+# Claude Code CLI is ready
+result = sandbox.commands.run("claude --version")
+print(result.stdout)  # 2.1.4 (Claude Code)
+
+# claude-agent-sdk is installed
+result = sandbox.commands.run("pip show claude-agent-sdk | grep Version")
+print(result.stdout)  # Version: 0.1.19
+```
+
+```javascript JavaScript
+import Sandbox from '@moru-ai/core'
+
+const sandbox = await Sandbox.create("claude-agent-python")
+
+// Claude Code CLI is ready
+const claudeResult = await sandbox.commands.run("claude --version")
+console.log(claudeResult.stdout)  // 2.1.4 (Claude Code)
+```
+</CodeGroup>
+
+<Info>
+  For a complete guide on building AI agents, see the [Claude Agent SDK guide](/guides/claude-agent-sdk/overview).
+</Info>
+
+## Identifying Default Templates
+
+Default templates display a "by Moru" badge in the dashboard. They cannot be modified or deleted.
+
+In API responses, default templates include an `isDefault: true` property:
+
+```json
+{
+  "templateId": "32u2qcnygu3zemwfe3rb",
+  "aliases": ["base"],
+  "isDefault": true,
+  "defaultDescription": "Default sandbox template with Python 3.11, Node.js 20, Yarn, Git, and GitHub CLI"
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Templates" icon="hammer" href="/templates/build">
+    Create templates with your own dependencies.
+  </Card>
+  <Card title="Claude Agent SDK" icon="robot" href="/guides/claude-agent-sdk/overview">
+    Build AI agents with Claude.
+  </Card>
+</CardGroup>
