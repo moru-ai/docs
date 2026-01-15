@@ -3,21 +3,51 @@ title: "Quickstart"
 description: "Create your first Moru sandbox"
 ---
 
-## Step 1: Create an Account
+The fastest way to try Moru is with the CLI.
 
-Sign up for a free Moru account at [moru.io/dashboard](https://moru.io/dashboard).
+## CLI Quickstart
 
-## Step 2: Get Your API Key
+### Install the CLI
 
-1. Go to the [API Keys tab](https://moru.io/dashboard?tab=keys) in your dashboard
-2. Click **Create API Key**
-3. Copy your new API key (you won't be able to see it again)
+```bash
+curl -fsSL https://moru.io/cli/install.sh | bash
+```
 
-## Step 3: Install the SDK
+### Hello World
 
-<Info>
-**Requirements:** Python 3.8+ or Node.js 18+
-</Info>
+```bash
+# Login
+moru auth login
+
+# Run a command and get destroyed automatically
+moru sandbox run base echo 'hello world!'
+
+# List sandboxes
+moru sandbox list
+
+# View logs
+moru sandbox logs <id>
+```
+
+### Create/Kill
+
+```bash
+# Create a sandbox
+moru sandbox create base
+
+# Run a command inside
+moru sandbox exec <id> 'sh -c "echo Hello Moru > /tmp/note.txt"'
+
+# Run another command
+moru sandbox exec <id> cat /tmp/note.txt
+
+# Kill when done
+moru sandbox kill <id>
+```
+
+## SDK Quickstart
+
+### Install the SDK
 
 <CodeGroup>
 ```bash Python
@@ -29,175 +59,84 @@ npm install @moru-ai/core
 ```
 </CodeGroup>
 
-## Step 4: Set Your API Key
+### API Key Set Up
 
-<CodeGroup>
-```bash Environment Variable
-export MORU_API_KEY=your_api_key_here
+```bash
+export MORU_API_KEY=your_api_key
 ```
 
-```python Python (inline)
-from moru import Sandbox
+**Go to the [API Keys tab](https://moru.io/dashboard?tab=keys)** if you didn't create an API key yet.
 
-sandbox = Sandbox.create(api_key="your_api_key_here")
-```
-
-```javascript JavaScript (inline)
-import Sandbox from '@moru-ai/core'
-
-const sandbox = await Sandbox.create({ apiKey: 'your_api_key_here' })
-```
-</CodeGroup>
-
-## Step 5: Create a Sandbox and Run Commands
+### Create/Kill
 
 <CodeGroup>
 ```python Python
 from moru import Sandbox
 
-# Create a sandbox with the default 'base' template
+# Create a sandbox using the 'base' template (default)
 sandbox = Sandbox.create()
 print(f"Sandbox created: {sandbox.sandbox_id}")
 
 # Run a command
-result = sandbox.commands.run("echo 'Hello, World!'")
+result = sandbox.commands.run("echo 'Hello from Moru!'")
 print(f"Output: {result.stdout}")
-print(f"Exit code: {result.exit_code}")
-
-# Write a file
-sandbox.files.write("/tmp/hello.txt", "Hello from Moru!")
-
-# Read it back
-content = sandbox.files.read("/tmp/hello.txt")
-print(f"File content: {content}")
-
-# List directory contents
-entries = sandbox.files.list("/tmp")
-for entry in entries:
-    print(f"  {entry.name} ({entry.type})")
 
 # Clean up
 sandbox.kill()
-print("Sandbox terminated")
 ```
 
 ```javascript JavaScript
 import Sandbox from '@moru-ai/core'
 
-// Create a sandbox with the default 'base' template
+// Create a sandbox using the 'base' template (default)
 const sandbox = await Sandbox.create()
 console.log(`Sandbox created: ${sandbox.sandboxId}`)
 
 // Run a command
-const result = await sandbox.commands.run("echo 'Hello, World!'")
+const result = await sandbox.commands.run("echo 'Hello from Moru!'")
 console.log(`Output: ${result.stdout}`)
-console.log(`Exit code: ${result.exitCode}`)
-
-// Write a file
-await sandbox.files.write("/tmp/hello.txt", "Hello from Moru!")
-
-// Read it back
-const content = await sandbox.files.read("/tmp/hello.txt")
-console.log(`File content: ${content}`)
-
-// List directory contents
-const entries = await sandbox.files.list("/tmp")
-for (const entry of entries) {
-  console.log(`  ${entry.name} (${entry.type})`)
-}
 
 // Clean up
 await sandbox.kill()
-console.log("Sandbox terminated")
 ```
 </CodeGroup>
 
-## Using Async (Python)
+### Streaming Output
 
-For async applications, use `AsyncSandbox`:
-
-```python
-import asyncio
-from moru import AsyncSandbox
-
-async def main():
-    sandbox = await AsyncSandbox.create()
-
-    result = await sandbox.commands.run("python3 --version")
-    print(result.stdout)
-
-    await sandbox.kill()
-
-asyncio.run(main())
-```
-
-## Streaming Command Output
-
-Stream output in real-time for long-running commands:
+Stream stdout/stderr in real-time for long-running commands.
 
 <CodeGroup>
 ```python Python
-from moru import Sandbox
-
-sandbox = Sandbox.create()
-
-# Stream output as it arrives
 sandbox.commands.run(
     "for i in 1 2 3; do echo $i; sleep 1; done",
-    on_stdout=lambda data: print(f"stdout: {data}"),
-    on_stderr=lambda data: print(f"stderr: {data}"),
-    timeout=30
+    on_stdout=lambda data: print(data),
+    on_stderr=lambda data: print(data),
 )
-
-sandbox.kill()
 ```
 
 ```javascript JavaScript
-import Sandbox from '@moru-ai/core'
-
-const sandbox = await Sandbox.create()
-
-// Stream output as it arrives
-await sandbox.commands.run(
-  "for i in 1 2 3; do echo $i; sleep 1; done",
-  {
-    onStdout: (data) => console.log(`stdout: ${data}`),
-    onStderr: (data) => console.log(`stderr: ${data}`),
-    timeoutMs: 30000
-  }
-)
-
-await sandbox.kill()
+await sandbox.commands.run("for i in 1 2 3; do echo $i; sleep 1; done", {
+  onStdout: (data) => console.log(data),
+  onStderr: (data) => console.error(data),
+})
 ```
 </CodeGroup>
+
+### Monitor Sandbox Logs
+
+After running your sandbox, you can view logs, monitor activity, and debug issues from the [Sandboxes tab](https://moru.io/dashboard?tab=sandboxes) in your dashboard.
 
 ## Using a Custom Template
 
-Create a sandbox with a specific template. You can create custom templates with pre-installed dependencies via the [dashboard](https://moru.io/dashboard) or CLI.
+With custom templates, you can build your own VM snapshot with your own agent pre-installed. See the [Maru agent example](https://github.com/moru-ai/maru/tree/main/apps/agent) and the [templates documentation](/templates/overview) for more information.
 
 <CodeGroup>
 ```python Python
-from moru import Sandbox
-
-# Use a custom template (create one in the dashboard first)
 sandbox = Sandbox.create("my-template")
-
-result = sandbox.commands.run("echo 'Running in custom template'")
-print(result.stdout)
-
-sandbox.kill()
 ```
 
 ```javascript JavaScript
-import Sandbox from '@moru-ai/core'
-
-// Use a custom template (create one in the dashboard first)
-const sandbox = await Sandbox.create("my-template")
-
-const result = await sandbox.commands.run("echo 'Running in custom template'")
-console.log(result.stdout)
-
-await sandbox.kill()
+const sandbox = await Sandbox.create('my-template')
 ```
 </CodeGroup>
 
